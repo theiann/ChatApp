@@ -2,7 +2,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#define SERVER_PORT 9999
+#define SERVER_PORT 15377
 #define MAX_PENDING 5
 #define MAX_LINE 256
 
