@@ -5,6 +5,7 @@
 #define SERVER_PORT 15377
 #define MAX_PENDING 5
 #define MAX_LINE 256
+#define MAX_CLIENTS 3
 
 int main()
 {
