@@ -52,6 +52,34 @@ int main()
     }
     std::cout << "Listening on socket...\n";
 
+
+
+    SOCKET s;
+    std::cout << "Waiting for a client to connect...";
+    while (1)
+    {
+        s = accept(listenSocket, NULL, NULL);
+        if (s == SOCKET_ERROR)
+        {
+            std::cout << "accept() error";
+            closesocket(listenSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        std::cout << "Client Connected.";
+
+        // Send and receive data.
+        char buf[MAX_LINE];
+        int len = recv(s, buf, MAX_LINE, 0);
+        buf[len] = 0;
+        send(s, buf, strlen(buf), 0);
+        closesocket(s);
+        std::cout << "Client Closed." << std::endl;
+    }
+
+
+
     closesocket(listenSocket);
     WSACleanup();
     return 0;
