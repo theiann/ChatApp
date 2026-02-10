@@ -32,7 +32,7 @@ int main()
     // Bind the socket.
     sockaddr_in addr;
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY; // use local address
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1"); // use local address
     addr.sin_port = htons(SERVER_PORT);
     if (bind(listenSocket, (SOCKADDR *)&addr, sizeof(addr)) == SOCKET_ERROR)
     {
@@ -55,7 +55,7 @@ int main()
 
 
     SOCKET s;
-    std::cout << "Waiting for a client to connect...";
+    std::cout << "Waiting for a client to connect..." << std::endl;
     while (1)
     {
         s = accept(listenSocket, NULL, NULL);
@@ -67,7 +67,7 @@ int main()
             return 1;
         }
 
-        std::cout << "Client Connected.";
+        std::cout << "Client Connected." << std::endl;
 
         // Send and receive data.
         char buf[MAX_LINE];
