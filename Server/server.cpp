@@ -74,6 +74,7 @@ int main()
         int len = recv(s, buf, MAX_LINE, 0);
         buf[len] = 0;
         send(s, buf, strlen(buf), 0);
+        std::cout << "Received from client: " << buf << std::endl;
         closesocket(s);
         std::cout << "Client Closed." << std::endl;
     }

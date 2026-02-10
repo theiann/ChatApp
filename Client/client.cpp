@@ -24,6 +24,7 @@ int main(int argc, char **argv)
     }
     std::cout << "Winsock initialized." << std::endl;
 
+
     // translate the server name or IP address (128.90.54.1) to resolved IP address
     unsigned int ipaddr;
     // If the user input is an alpha name for the host, use gethostbyname()
@@ -41,16 +42,20 @@ int main(int argc, char **argv)
         ipaddr = *((unsigned long *)remoteHost->h_addr);
     }
     else //"128.90.54.1"
-        {ipaddr = inet_addr(argv[1]);}
+    {
+        ipaddr = inet_addr(argv[1]);
+    }
+
 
     // Create a socket.
-    SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);  
     if (s == INVALID_SOCKET)
     {
         printf("Error at socket(): %ld\n", WSAGetLastError());
         WSACleanup();
         return 1;
     }
+
 
     // Connect to a server.
     sockaddr_in addr;
@@ -64,11 +69,18 @@ int main(int argc, char **argv)
         return 1;
     }
     std::cout << "Connected to server." << std::endl;
-    ipaddr = inet_addr(argv[1]);
-    
 
 
+    // Send and receive data.
+    char buf[MAX_LINE];
+    std::cout << "Type whatever you want: ";
+    fgets(buf, sizeof(buf), stdin);
+    send(s, buf, strlen(buf), 0);
+    int len = recv(s, buf, MAX_LINE, 0);
+    buf[len] = 0;
+    std::cout << "Server says: " << buf << std::endl;
 
 
+    closesocket(s);
     return 0;
 }
