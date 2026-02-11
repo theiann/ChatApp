@@ -1,6 +1,7 @@
 #include <iostream>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include "clientManager.cpp"
 
 #define SERVER_PORT 15377
 #define MAX_PENDING 5
@@ -54,7 +55,7 @@ int main()
     std::cout << "Listening on socket...\n";
 
 
-
+    ClientManager* clientManager = ClientManager::getInstance();
     SOCKET s;
     std::cout << "Waiting for a client to connect..." << std::endl;
     while (1)
@@ -68,6 +69,8 @@ int main()
             return 1;
         }
 
+        
+        clientManager->addClient(s);
         std::cout << "Client Connected." << std::endl;
 
         // Send and receive data.
