@@ -55,8 +55,7 @@ int main()
     }
     std::cout << "Listening on socket...\n";
 
-
-    ClientManager* clientManager = ClientManager::getInstance();
+    ClientManager *clientManager = ClientManager::getInstance();
     SOCKET s;
     std::cout << "Waiting for a client to connect..." << std::endl;
     while (1)
@@ -70,24 +69,37 @@ int main()
             return 1;
         }
 
-        
         clientManager->addClient(s);
         clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "password" + std::to_string(clientManager->getClients().size()));
         std::cout << "Client Connected." << std::endl;
 
         // Send and receive data.
         char buf[MAX_LINE];
-        int len = recv(s, buf, MAX_LINE, 0);
-        buf[len] = 0;
-        send(s, buf, strlen(buf), 0);
-        std::cout << "Received from client: " << buf << std::endl;
-        closesocket(s);
 
-        clientManager->removeClient(s);
-        std::cout << "Client Closed." << std::endl;
+        // another loop!
+        while (1)
+        {
+            int len = recv(s, buf, MAX_LINE, 0);
+            if (len == 0)
+            {
+                std::cout << "Client disconnected." << std::endl;
+                break;
+            }
+            else if (len == SOCKET_ERROR)
+            {
+                std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+                break;
+            }
+            buf[len] = 0;
+            send(s, buf, strlen(buf), 0);
+            std::cout << "Received from client: " << buf << std::endl;
+            memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+        }
+        // closesocket(s);
+
+        // clientManager->removeClient(s);
+        // std::cout << "Client Closed." << std::endl;
     }
-
-
 
     closesocket(listenSocket);
     WSACleanup();

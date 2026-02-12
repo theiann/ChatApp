@@ -10,6 +10,7 @@ Client::Client(SOCKET socket) : clientSocket(socket), isAuthenticated(false) {}
 
 SOCKET Client::getSocket() const { return clientSocket; }
 
+
 ClientManager::ClientManager() {
     // initialization code
 }
@@ -82,9 +83,14 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
 {
     std::cout << "Creating user: " << username << " with password: " << password << std::endl;
     std::ofstream file("users.txt", std::ios::app);
-    if (file.is_open() && !isUserExists(username))
+    if(isUserExists(username))
     {
-        file << "(" << username << ", " << password << ")\n";
+        std::cout << "User already exists, cannot create user." << std::endl;
+        return false; // User creation failed
+    }
+    if (file.is_open())
+    {
+        file << "\n(" << username << ", " << password << ")";
         file.close();
         std::cout << "User created successfully." << std::endl;
     }

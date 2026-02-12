@@ -1,6 +1,9 @@
 #include <iostream>
 #include "winsock2.h"
 #include <ws2tcpip.h>
+#include <cctype>
+#include <cstring>
+#include <sstream>
 
 #define SERVER_PORT 15377
 #define MAX_LINE 256
@@ -24,7 +27,6 @@ int main(int argc, char **argv)
     }
     std::cout << "Winsock initialized." << std::endl;
 
-
     // translate the server name or IP address (128.90.54.1) to resolved IP address
     unsigned int ipaddr;
     // If the user input is an alpha name for the host, use gethostbyname()
@@ -46,16 +48,14 @@ int main(int argc, char **argv)
         ipaddr = inet_addr(argv[1]);
     }
 
-
     // Create a socket.
-    SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);  
+    SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s == INVALID_SOCKET)
     {
         printf("Error at socket(): %ld\n", WSAGetLastError());
         WSACleanup();
         return 1;
     }
-
 
     // Connect to a server.
     sockaddr_in addr;
@@ -70,17 +70,44 @@ int main(int argc, char **argv)
     }
     std::cout << "Connected to server." << std::endl;
 
-
     // Send and receive data.
     char buf[MAX_LINE];
-    std::cout << "Type whatever you want: ";
-    fgets(buf, sizeof(buf), stdin);
-    send(s, buf, strlen(buf), 0);
-    int len = recv(s, buf, MAX_LINE, 0);
-    buf[len] = 0;
-    std::cout << "Server says: " << buf << std::endl;
+    while (true)
+    {
+        std::cout << "Type whatever you want: ";
+        fgets(buf, sizeof(buf), stdin);
+        std::istringstream iss(buf);
+        handleCmd(iss);
 
+        send(s, buf, strlen(buf), 0);
+        int len = recv(s, buf, MAX_LINE, 0);
+        if (len > 0)
+        {
+            if (len >= MAX_LINE)
+                len = MAX_LINE - 1; // prevent overflow
+            buf[len] = '\0';
+            std::cout << "Server says: " << buf;
+        }
+        else if (len == 0)
+        {
+            std::cout << "Server closed connection." << std::endl;
+            break;
+        }
+        else
+        {
+            std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+            break;
+        }
+        memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+        // std::cout << "Server says: " << buf << std::endl;
+    }
 
+    fflush(stdout);
+    std::cout << "Closing socket." << std::endl;
     closesocket(s);
     return 0;
+}
+
+void handleCmd(const std::istringstream& cmd){
+
 }
