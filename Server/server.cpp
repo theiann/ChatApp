@@ -1,7 +1,8 @@
 #include <iostream>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include "clientManager.cpp"
+#include "clientManager.hpp"
+#include "cmdparser.hpp"
 
 #define SERVER_PORT 15377
 #define MAX_PENDING 5
@@ -71,6 +72,7 @@ int main()
 
         
         clientManager->addClient(s);
+        clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "password" + std::to_string(clientManager->getClients().size()));
         std::cout << "Client Connected." << std::endl;
 
         // Send and receive data.
@@ -80,6 +82,8 @@ int main()
         send(s, buf, strlen(buf), 0);
         std::cout << "Received from client: " << buf << std::endl;
         closesocket(s);
+
+        clientManager->removeClient(s);
         std::cout << "Client Closed." << std::endl;
     }
 

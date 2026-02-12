@@ -1,55 +1,101 @@
 #include <iostream>
 #include <list>
+#include <fstream>
+#include <string>
 #include "winsock2.h"
 #include <ws2tcpip.h>
+#include "clientManager.hpp"
 
-class Client
+Client::Client(SOCKET socket) : clientSocket(socket), isAuthenticated(false) {}
+
+SOCKET Client::getSocket() const { return clientSocket; }
+
+ClientManager::ClientManager() {
+    // initialization code
+}
+
+
+ClientManager * ClientManager::getInstance()
 {
-    private:
-        SOCKET clientSocket;
-        std::string clientUser;
-        std::string clientPass;
-        bool isAuthenticated;
-        
-
-    public:
-        Client(SOCKET socket) : clientSocket(socket), isAuthenticated(false) {}
+    if (instance == nullptr)
+    {
+        instance = new ClientManager();
+    }
+    return instance;
+}
 
 
-        SOCKET getSocket() const { return clientSocket; }
-};
+// it does what it says on the tin, returns the list of clients
+std::list<Client>& ClientManager::getClients() { return clients; }
 
 
 
-// this is a singleton class that manages all clients connected to the server
-class ClientManager
+
+// adds a client to the list of clients, leaves the rest of the client management to the Client class
+void ClientManager::addClient(SOCKET clientSocket)
 {
-    private:
-        std::list<Client> clients;
-        static ClientManager* instance;
-        ClientManager() {}
+    clients.emplace_back(clientSocket);
+    std::cout << "Client added. Total clients: " << clients.size() << std::endl;
+}
 
-    public:
-        static ClientManager* getInstance()
+
+
+
+// removes a client from the list of clients, leaves the rest of the client management to the Client class
+void ClientManager::removeClient(SOCKET clientSocket)
+{
+    clients.remove_if([clientSocket](const Client &client)
+                      { return client.getSocket() == clientSocket; });
+    std::cout << "Client removed. Total clients: " << clients.size() << std::endl;
+}
+
+
+
+// checks if a user exists in the users.txt file, returns true if the user exists, false otherwise
+bool ClientManager::isUserExists(const std::string &username)
+{
+    std::ifstream file("users.txt");
+    if (file.is_open())
+    {
+        std::string line;
+        while (std::getline(file, line))
         {
-            if (instance == nullptr)
+            if (line.find("(" + username + ",") != std::string::npos)
             {
-                instance = new ClientManager();
+                file.close();
+                return true; // User exists
             }
-            return instance;
         }
+        file.close();
+    }
+    else
+    {
+        std::cerr << "Unable to open users.txt for reading." << std::endl;
+    }
+    return false; // User does not exist
+}
 
-        void addClient(SOCKET clientSocket)
-        {
-            clients.emplace_back(clientSocket);
-            std::cout << "Client added. Total clients: " << clients.size() << std::endl;
-        }
 
-        void removeClient(SOCKET clientSocket)
-        {
-            clients.remove_if([clientSocket](const Client& client) {
-                return client.getSocket() == clientSocket;
-            });
-            std::cout << "Client removed. Total clients: " << clients.size() << std::endl;
-        }
-};
+
+
+bool ClientManager::createUser(SOCKET clientSocket, const std::string &username, const std::string &password)
+{
+    std::cout << "Creating user: " << username << " with password: " << password << std::endl;
+    std::ofstream file("users.txt", std::ios::app);
+    if (file.is_open() && !isUserExists(username))
+    {
+        file << "(" << username << ", " << password << ")\n";
+        file.close();
+        std::cout << "User created successfully." << std::endl;
+    }
+    else
+    {
+        std::cerr << "Unable to open users.txt for writing." << std::endl;
+        return false; // User creation failed
+    }
+
+    return true; // Assume user creation is successful
+}
+
+// Define the static instance pointer
+ClientManager *ClientManager::instance = nullptr;
