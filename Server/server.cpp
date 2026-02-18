@@ -83,6 +83,8 @@ int main()
             if (len == 0)
             {
                 std::cout << "Client disconnected." << std::endl;
+                clientManager->removeClient(s);
+                closesocket(s);
                 break;
             }
             else if (len == SOCKET_ERROR)
