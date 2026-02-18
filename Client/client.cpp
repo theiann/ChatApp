@@ -9,6 +9,9 @@
 #define MAX_LINE 256
 
 void handleCmd(std::istringstream& cmd, SOCKET s);
+
+void waitForServerResponse(SOCKET s);
+
 int main(int argc, char **argv)
 {
     std::cout << "argc = " << argc << std::endl;
@@ -80,26 +83,26 @@ int main(int argc, char **argv)
         std::istringstream iss(buf);
         handleCmd(iss, s);
 
-        send(s, buf, strlen(buf), 0);
-        int len = recv(s, buf, MAX_LINE, 0);
-        if (len > 0)
-        {
-            if (len >= MAX_LINE)
-                len = MAX_LINE - 1; // prevent overflow
-            buf[len] = '\0';
-            std::cout << "Server says: " << buf;
-        }
-        else if (len == 0)
-        {
-            std::cout << "Server closed connection." << std::endl;
-            break;
-        }
-        else
-        {
-            std::cout << "recv failed: " << WSAGetLastError() << std::endl;
-            break;
-        }
-        memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+        //send(s, buf, strlen(buf), 0);
+        // int len = recv(s, buf, MAX_LINE, 0);
+        // if (len > 0)
+        // {
+        //     if (len >= MAX_LINE)
+        //         len = MAX_LINE - 1; // prevent overflow
+        //     buf[len] = '\0';
+        //     std::cout << "Server says: " << buf;
+        // }
+        // else if (len == 0)
+        // {
+        //     std::cout << "Server closed connection." << std::endl;
+        //     break;
+        // }
+        // else
+        // {
+        //     std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+        //     break;
+        // }
+        // memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
         // std::cout << "Server says: " << buf << std::endl;
     }
 
@@ -119,5 +122,41 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
         closesocket(s);
         WSACleanup();
         exit(0);
+    } else if(firstToken == "login"){
+        // If the user types "login username password", we want to send a login command to the server
+        std::string username, password;
+        cmd >> username >> password;
+        std::string loginCmd = "login " + username + " " + password;
+        std::cout << "Login command: " << loginCmd << std::endl;
+        if(username.empty() || password.empty()){
+            std::cout << "Invalid login command. Usage: login username password" << std::endl;
+            return;
+        }
+        send(s, loginCmd.c_str(), loginCmd.size(), 0);
+        waitForServerResponse(s);
     }
+    return;
 }
+
+
+void waitForServerResponse(SOCKET s){
+    char buf[MAX_LINE];
+    int len = recv(s, buf, MAX_LINE, 0);
+    if (len > 0)
+    {
+        if (len >= MAX_LINE)
+            len = MAX_LINE - 1; // prevent overflow
+        buf[len] = '\0';
+        std::cout << "Server says: " << buf << std::endl;
+    }
+    else if (len == 0)
+    {
+        std::cout << "Server closed connection." << std::endl;
+    }
+    else
+    {
+        std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+    }
+    memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+}
+
