@@ -8,6 +8,7 @@
 #define SERVER_PORT 15377
 #define MAX_LINE 256
 
+void handleCmd(std::istringstream& cmd, SOCKET s);
 int main(int argc, char **argv)
 {
     std::cout << "argc = " << argc << std::endl;
@@ -77,7 +78,7 @@ int main(int argc, char **argv)
         std::cout << "Type whatever you want: ";
         fgets(buf, sizeof(buf), stdin);
         std::istringstream iss(buf);
-        handleCmd(iss);
+        handleCmd(iss, s);
 
         send(s, buf, strlen(buf), 0);
         int len = recv(s, buf, MAX_LINE, 0);
@@ -108,6 +109,15 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void handleCmd(const std::istringstream& cmd){
-
+void handleCmd(std::istringstream& cmd, SOCKET s){
+    std::string firstToken;
+    cmd >> firstToken;
+    std::cout << "First token!!!!: " << firstToken << std::endl;
+    if(firstToken == "exit"){
+        // If the user types "exit", we want to exit the client program
+        std::cout << "Exiting client." << std::endl;
+        closesocket(s);
+        WSACleanup();
+        exit(0);
+    }
 }
