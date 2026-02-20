@@ -159,4 +159,3 @@ void waitForServerResponse(SOCKET s){
     }
     memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
 }
-
