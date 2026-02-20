@@ -15,13 +15,16 @@ class Client
 private:
     SOCKET clientSocket;
     std::string clientUser;
-    std::string clientPass;
     bool isAuthenticated;
 
 public:
     explicit Client(SOCKET socket);
 
     SOCKET getSocket() const;
+    std::string getUser() const;
+    void setUser(const std::string& user);
+    bool getIsAuthenticated() const;
+    void setIsAuthenticated(bool authenticated);
 };
 
 
@@ -43,9 +46,13 @@ public:
 
     void addClient(SOCKET clientSocket);
     void removeClient(SOCKET clientSocket);
-
+    Client* getClient(SOCKET clientSocket);
     bool isUserExists(const std::string& username);
     bool createUser(SOCKET clientSocket,
+                    const std::string& username,
+                    const std::string& password);
+
+    bool clientLogin(SOCKET clientSocket,
                     const std::string& username,
                     const std::string& password);
 };

@@ -9,6 +9,10 @@
 Client::Client(SOCKET socket) : clientSocket(socket), isAuthenticated(false) {}
 
 SOCKET Client::getSocket() const { return clientSocket; }
+std::string Client::getUser() const { return clientUser; }
+void Client::setUser(const std::string &user) { clientUser = user; }
+bool Client::getIsAuthenticated() const { return isAuthenticated; }
+void Client::setIsAuthenticated(bool authenticated) { isAuthenticated = authenticated; }
 
 
 ClientManager::ClientManager() {
@@ -46,11 +50,21 @@ void ClientManager::addClient(SOCKET clientSocket)
 void ClientManager::removeClient(SOCKET clientSocket)
 {
     clients.remove_if([clientSocket](const Client &client)
-                      { return client.getSocket() == clientSocket; });
+                    { return client.getSocket() == clientSocket; });
     std::cout << "Client removed. Total clients: " << clients.size() << std::endl;
 }
 
-
+Client *ClientManager::getClient(SOCKET clientSocket)
+{
+    for (auto &client : clients)
+    {
+        if (client.getSocket() == clientSocket)
+        {
+            return &client;
+        }
+    }
+    return nullptr; // Client not found
+}
 
 // checks if a user exists in the users.txt file, returns true if the user exists, false otherwise
 bool ClientManager::isUserExists(const std::string &username)
@@ -101,6 +115,38 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
     }
 
     return true; // Assume user creation is successful
+}
+bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username, const std::string &password)
+{
+    Client *client = getClient(clientSocket);
+    if (client == nullptr)
+    {
+        std::cout << "Client not found for socket: " << clientSocket << std::endl;
+        return false; // Client not found
+    }
+    std::ifstream file("users.txt");
+    if (file.is_open())
+    {
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (line.find("(" + username + ", " + password + ")") != std::string::npos)
+            {
+                file.close();
+                std::cout << "User authenticated successfully." << std::endl;
+                client->setUser(username);
+                client->setIsAuthenticated(true);
+                return true; // User authenticated successfully
+            }
+        }
+        file.close();
+    }
+    else
+    {
+        std::cerr << "Unable to open users.txt for reading." << std::endl;
+    }
+    std::cout << "Authentication failed for user: " << username << std::endl;
+    return false; // Authentication failed
 }
 
 // Define the static instance pointer
