@@ -26,7 +26,7 @@ public:
     bool getIsAuthenticated() const;
     void setIsAuthenticated(bool authenticated);
     std::string toString() const {
-        return "socket=" + std::to_string(clientSocket) + "\nuser=" + clientUser + "\nauthenticated=" + (isAuthenticated ? "true" : "false") + "}";
+        return "socket=" + std::to_string(clientSocket) + "\nuser=" + clientUser + "\nauthenticated=" + (isAuthenticated ? "true" : "false");
     }
 };
 

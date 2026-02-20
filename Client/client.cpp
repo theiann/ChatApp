@@ -10,6 +10,9 @@
 
 void handleCmd(std::istringstream& cmd, SOCKET s);
 
+void login(SOCKET s, std::istringstream& cmd);
+void newUser(SOCKET s, std::istringstream& cmd);
+
 void waitForServerResponse(SOCKET s);
 
 int main(int argc, char **argv)
@@ -132,24 +135,53 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
         exit(0);
     } else if(firstToken == "login"){
         // If the user types "login username password", we want to send a login command to the server
-        std::string username, password;
-        cmd >> username >> password;
-        std::string loginCmd = "login " + username + " " + password;
-        std::cout << "Login command: " << loginCmd << std::endl;
-        if(username.empty() || password.empty()){
-            std::cout << "Invalid login command. Usage: login username password" << std::endl;
-            return;
-        }
-        if(username.length() < 3 || username.length() > 32 || password.length() < 4 || password.length() > 8){
-            std::cout << "Username must be between 3 and 32 characters long, and password must be between 4 and 8 characters long." << std::endl;
-            return;
-        }
-        send(s, loginCmd.c_str(), loginCmd.size(), 0);
-        waitForServerResponse(s);
+        login(s, cmd);
+    } else if(firstToken == "newuser"){
+        // If the user types "newuser username password", we want to send a newuser command to the server
+        newUser(s, cmd);
+    } else {
+        std::cout << "Unknown command. Available commands: login, newuser, exit" << std::endl;
     }
     return;
 }
 
+
+
+void login(SOCKET s, std::istringstream& cmd){
+    std::string username, password;
+    cmd >> username >> password;
+    std::string loginCmd = "login " + username + " " + password;
+    std::cout << "Login command: " << loginCmd << std::endl;
+    if(username.empty() || password.empty()){
+        std::cout << "Invalid login command. Usage: login username password" << std::endl;
+        return;
+    }
+    if(username.length() < 3 || username.length() > 32 || password.length() < 4 || password.length() > 8){
+        std::cout << "Username must be between 3 and 32 characters long, and password must be between 4 and 8 characters long." << std::endl;
+        return;
+    }
+    send(s, loginCmd.c_str(), loginCmd.size(), 0);
+    waitForServerResponse(s);
+    return;
+}
+
+void newUser(SOCKET s, std::istringstream& cmd){
+    std::string username, password;
+    cmd >> username >> password;
+    std::string newUserCmd = "newuser " + username + " " + password;
+    std::cout << "New user command: " << newUserCmd << std::endl;
+    if(username.empty() || password.empty()){
+        std::cout << "Invalid newuser command. Usage: newuser username password" << std::endl;
+        return;
+    }
+    if(username.length() < 3 || username.length() > 32 || password.length() < 4 || password.length() > 8){
+        std::cout << "Username must be between 3 and 32 characters long, and password must be between 4 and 8 characters long." << std::endl;
+        return;
+    }
+    send(s, newUserCmd.c_str(), newUserCmd.size(), 0);
+    waitForServerResponse(s);
+    return;
+}
 
 void waitForServerResponse(SOCKET s){
     char buf[MAX_LINE];
@@ -159,7 +191,7 @@ void waitForServerResponse(SOCKET s){
         if (len >= MAX_LINE)
             len = MAX_LINE - 1; // prevent overflow
         buf[len] = '\0';
-        std::cout << "Server says: " << buf << std::endl;
+        std::cout << buf << std::endl;
     }
     else if (len == 0)
     {

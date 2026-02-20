@@ -91,7 +91,17 @@ bool ClientManager::isUserExists(const std::string &username)
 }
 
 
-
+bool isUserInClientManager(const std::string &username, const std::list<Client> &clients)
+{
+    for (const auto &client : clients)
+    {
+        if (client.getUser() == username)
+        {
+            return true; // User is currently logged in
+        }
+    }
+    return false; // User is not currently logged in
+}
 
 bool ClientManager::createUser(SOCKET clientSocket, const std::string &username, const std::string &password)
 {
@@ -136,10 +146,17 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
         std::cout << "Client not found for socket: " << clientSocket << std::endl;
         return false; // Client not found
     }
+    std::string response;
+    if(isUserInClientManager(username, clients))
+    {
+        std::cout << "User is already logged in: " << username << std::endl;
+        response = "Denied. User is already logged in.";
+        send(clientSocket, response.c_str(), response.size(), 0);
+        return false; // User is already logged in
+    }
     std::ifstream file("users.txt");
     if (file.is_open())
     {
-        std::string response;
         std::string line;
         while (std::getline(file, line))
         {
@@ -154,7 +171,7 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
                 return true; // User authenticated successfully
             }
         }
-        response = "Denied. User name or password incorrect";
+        response = "Denied. User name or password incorrect.";
         send(clientSocket, response.c_str(), response.size(), 0);
         file.close();
     }

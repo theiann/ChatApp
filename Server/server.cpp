@@ -94,6 +94,8 @@ int main()
             else if (len == SOCKET_ERROR)
             {
                 std::cout << "recv failed: " << WSAGetLastError() << std::endl;
+                clientManager->removeClient(s);
+                closesocket(s);
                 break;
             }
             buf[len] = 0;
