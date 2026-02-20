@@ -9,6 +9,9 @@
 #define MAX_LINE 256
 #define MAX_CLIENTS 3
 
+
+bool handleCmd(std::istringstream& cmd, SOCKET s);
+
 int main()
 {
     // Initialize Winsock.
@@ -70,8 +73,9 @@ int main()
         }
 
         clientManager->addClient(s);
-        clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "password" + std::to_string(clientManager->getClients().size()));
+        clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "pass" + std::to_string(clientManager->getClients().size()));
         std::cout << "Client Connected." << std::endl;
+        clientManager->printClients();
 
         // Send and receive data.
         char buf[MAX_LINE];
@@ -93,9 +97,12 @@ int main()
                 break;
             }
             buf[len] = 0;
-            send(s, buf, strlen(buf), 0);
+            //send(s, buf, strlen(buf), 0);
             std::cout << "Received from client: " << buf << std::endl;
+            std::istringstream iss(buf);
+            handleCmd(iss, s);
             memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+            clientManager->printClients();
         }
         // closesocket(s);
 
@@ -106,4 +113,22 @@ int main()
     closesocket(listenSocket);
     WSACleanup();
     return 0;
+}
+
+
+bool handleCmd(std::istringstream &cmd, SOCKET s)
+{
+    std::string firstToken;
+    cmd >> firstToken;
+    std::cout << "First token: " << firstToken << std::endl;
+    if (firstToken == "login")
+    {
+        std::string username, password;
+        cmd >> username >> password;
+        std::cout << "Login command received. Username: " << username << ", Password: " << password << std::endl;
+        ClientManager *clientManager = ClientManager::getInstance();
+        
+        return clientManager->clientLogin(s, username, password); // Command handled
+    }
+    return false; // Command not handled
 }

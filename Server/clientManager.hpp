@@ -25,6 +25,9 @@ public:
     void setUser(const std::string& user);
     bool getIsAuthenticated() const;
     void setIsAuthenticated(bool authenticated);
+    std::string toString() const {
+        return "socket=" + std::to_string(clientSocket) + "\nuser=" + clientUser + "\nauthenticated=" + (isAuthenticated ? "true" : "false") + "}";
+    }
 };
 
 
@@ -51,7 +54,7 @@ public:
     bool createUser(SOCKET clientSocket,
                     const std::string& username,
                     const std::string& password);
-
+    void printClients();
     bool clientLogin(SOCKET clientSocket,
                     const std::string& username,
                     const std::string& password);

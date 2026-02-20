@@ -116,6 +116,18 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
 
     return true; // Assume user creation is successful
 }
+
+void ClientManager::printClients()
+{
+    std::cout << "Current Clients in ClientManager: " << std::endl;
+    for(Client &client : clients)
+    {
+        std::cout << "Client Info: " << std::endl;
+        std::cout << client.toString() << std::endl;
+    }
+}
+
+
 bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username, const std::string &password)
 {
     Client *client = getClient(clientSocket);
@@ -127,6 +139,7 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     std::ifstream file("users.txt");
     if (file.is_open())
     {
+        std::string response;
         std::string line;
         while (std::getline(file, line))
         {
@@ -136,9 +149,13 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
                 std::cout << "User authenticated successfully." << std::endl;
                 client->setUser(username);
                 client->setIsAuthenticated(true);
+                response = "login confirmed";
+                send(clientSocket, response.c_str(), response.size(), 0);
                 return true; // User authenticated successfully
             }
         }
+        response = "Denied. User name or password incorrect";
+        send(clientSocket, response.c_str(), response.size(), 0);
         file.close();
     }
     else
