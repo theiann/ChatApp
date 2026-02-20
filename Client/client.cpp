@@ -14,12 +14,20 @@ void waitForServerResponse(SOCKET s);
 
 int main(int argc, char **argv)
 {
+
+    // this code causes warnings, but it is necessary for testing, we will connect to the local server
+    argc = 2;
+    argv[1] = "127.0.0.1";
+    argv[0] = "127.0.0.1";
+
+
     std::cout << "argc = " << argc << std::endl;
     if (argc < 2)
     {
         std::cout << "\nUseage: client serverName\n";
         return 1;
     }
+    
 
     // Initialize Winsock.
     WSADATA wsaData;
@@ -130,6 +138,10 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
         std::cout << "Login command: " << loginCmd << std::endl;
         if(username.empty() || password.empty()){
             std::cout << "Invalid login command. Usage: login username password" << std::endl;
+            return;
+        }
+        if(username.length() < 3 || username.length() > 32 || password.length() < 4 || password.length() > 8){
+            std::cout << "Username must be between 3 and 32 characters long, and password must be between 4 and 8 characters long." << std::endl;
             return;
         }
         send(s, loginCmd.c_str(), loginCmd.size(), 0);
