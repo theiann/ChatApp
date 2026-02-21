@@ -39,7 +39,7 @@ int main(int argc, char **argv)
         std::cout << "Error at WSAStartup()";
         return 1;
     }
-    std::cout << "Winsock initialized." << std::endl;
+    //std::cout << "Winsock initialized." << std::endl;
 
     // translate the server name or IP address (128.90.54.1) to resolved IP address
     unsigned int ipaddr;
@@ -89,32 +89,10 @@ int main(int argc, char **argv)
     char buf[MAX_LINE];
     while (true)
     {
-        //std::cout << "Type whatever you want: ";
+        // get user input
         fgets(buf, sizeof(buf), stdin);
         std::istringstream iss(buf);
         handleCmd(iss, s);
-
-        //send(s, buf, strlen(buf), 0);
-        // int len = recv(s, buf, MAX_LINE, 0);
-        // if (len > 0)
-        // {
-        //     if (len >= MAX_LINE)
-        //         len = MAX_LINE - 1; // prevent overflow
-        //     buf[len] = '\0';
-        //     std::cout << "Server says: " << buf;
-        // }
-        // else if (len == 0)
-        // {
-        //     std::cout << "Server closed connection." << std::endl;
-        //     break;
-        // }
-        // else
-        // {
-        //     std::cout << "recv failed: " << WSAGetLastError() << std::endl;
-        //     break;
-        // }
-        // memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
-        // std::cout << "Server says: " << buf << std::endl;
     }
 
     fflush(stdout);
@@ -126,21 +104,16 @@ int main(int argc, char **argv)
 void handleCmd(std::istringstream& cmd, SOCKET s){
     std::string firstToken;
     cmd >> firstToken;
-    //std::cout << "First token!!!!: " << firstToken << std::endl;
     if(firstToken == "exit"){
-        // If the user types "exit", we want to exit the client program
         std::cout << "Exiting client." << std::endl;
         closesocket(s);
         WSACleanup();
         exit(0);
     } else if(firstToken == "login"){
-        // If the user types "login username password", we want to send a login command to the server
         login(s, cmd);
     } else if(firstToken == "newuser"){
-        // If the user types "newuser username password", we want to send a newuser command to the server
         newUser(s, cmd);
     } else if(firstToken == "send"){
-        // If the user types "send message", we want to send a message to the server
         sendTextMessage(s, cmd);
     } else {
         std::cout << "Unknown command. Available commands: login, newuser, send, exit" << std::endl;
@@ -154,7 +127,6 @@ void login(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
     std::string loginCmd = "login " + username + " " + password;
-    //std::cout << "Login command: " << loginCmd << std::endl;
     if(username.empty() || password.empty()){
         std::cout << "Invalid login command. Usage: login username password" << std::endl;
         return;
@@ -172,7 +144,6 @@ void newUser(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
     std::string newUserCmd = "newuser " + username + " " + password;
-    //std::cout << "New user command: " << newUserCmd << std::endl;
     if(username.empty() || password.empty()){
         std::cout << "Invalid newuser command. Usage: newuser username password" << std::endl;
         return;
@@ -200,7 +171,6 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     // Remove leading whitespace from the message
     message.erase(0, message.find_first_not_of(" \t"));
     std::string sendCmd = "send " + message;
-    //std::cout << "Send command: " << sendCmd << std::endl;
     send(s, sendCmd.c_str(), sendCmd.size(), 0);
     waitForServerResponse(s);
     return;

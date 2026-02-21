@@ -180,6 +180,25 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     return false; // Authentication failed
 }
 
+
+bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &message)
+{
+    Client *client = ClientManager::getInstance()->getClient(clientSocket);
+    if (client == nullptr)   {
+        std::cout << "Client not found for socket: " << clientSocket << std::endl;
+        return false; // Client not found
+    }
+    if (!client->getIsAuthenticated()) {
+        std::cout << "Client is not authenticated, cannot send message." << std::endl;
+        sendToClient(clientSocket, "Denied. Please login to send messages.");
+        return false; // Client is not authenticated
+    }
+    std::string messageWithUser = client->getUser() + ":" + message; // Prepend the username to the message
+    sendToClient(clientSocket, messageWithUser); // Send the message to the client
+    return true; // Message sent successfully
+}
+
+// this is just to send a single message to a client, it does not handle any logic for sending messages to multiple clients or anything like that, it just sends the message to the specified client
 void ClientManager::sendToClient(SOCKET clientSocket, const std::string &message)
 {
     std::cout << "sending message: " << message << std::endl;

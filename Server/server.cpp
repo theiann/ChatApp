@@ -139,6 +139,11 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
         std::cout << "New user command received. Username: " << username << ", Password: " << password << std::endl;
         
         return clientManager->createUser(s, username, password); // Command handled
+    } else if(firstToken == "send"){
+        std::string message;
+        std::getline(cmd, message);
+        std::cout << "Send command received. Message: " << message << std::endl;
+        return clientManager->sendTextMessage(s, message); // Command handled
     }
     return false; // Command not handled
 }

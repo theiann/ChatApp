@@ -58,6 +58,7 @@ public:
     bool clientLogin(SOCKET clientSocket,
                     const std::string& username,
                     const std::string& password);
+    bool sendTextMessage(SOCKET clientSocket, const std::string& message);
     void sendToClient(SOCKET clientSocket, const std::string &message);
 };
 
