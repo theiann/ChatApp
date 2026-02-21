@@ -58,6 +58,7 @@ public:
     bool clientLogin(SOCKET clientSocket,
                     const std::string& username,
                     const std::string& password);
+    void sendToClient(SOCKET clientSocket, const std::string &message);
 };
 
 #endif // CLIENTMANAGER_H

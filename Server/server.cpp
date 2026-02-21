@@ -123,14 +123,22 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
     std::string firstToken;
     cmd >> firstToken;
     std::cout << "First token: " << firstToken << std::endl;
+    ClientManager *clientManager = ClientManager::getInstance();
     if (firstToken == "login")
     {
         std::string username, password;
         cmd >> username >> password;
         std::cout << "Login command received. Username: " << username << ", Password: " << password << std::endl;
-        ClientManager *clientManager = ClientManager::getInstance();
+        
         
         return clientManager->clientLogin(s, username, password); // Command handled
+    } else if (firstToken == "newuser")
+    {
+        std::string username, password;
+        cmd >> username >> password;
+        std::cout << "New user command received. Username: " << username << ", Password: " << password << std::endl;
+        
+        return clientManager->createUser(s, username, password); // Command handled
     }
     return false; // Command not handled
 }

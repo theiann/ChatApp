@@ -191,7 +191,7 @@ void waitForServerResponse(SOCKET s){
         if (len >= MAX_LINE)
             len = MAX_LINE - 1; // prevent overflow
         buf[len] = '\0';
-        std::cout << buf << std::endl;
+        std::cout << "server says: " << buf << std::endl;
     }
     else if (len == 0)
     {

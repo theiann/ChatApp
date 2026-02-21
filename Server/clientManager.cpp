@@ -107,9 +107,12 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
 {
     std::cout << "Creating user: " << username << " with password: " << password << std::endl;
     std::ofstream file("users.txt", std::ios::app);
+    std::string response;
     if(isUserExists(username))
     {
+        file.close();
         std::cout << "User already exists, cannot create user." << std::endl;
+        sendToClient(clientSocket, "Denied. User account already exists.");
         return false; // User creation failed
     }
     if (file.is_open())
@@ -117,14 +120,11 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
         file << "\n(" << username << ", " << password << ")";
         file.close();
         std::cout << "User created successfully." << std::endl;
+        sendToClient(clientSocket, "New user account created. Please login.");
+        return true;
     }
-    else
-    {
-        std::cerr << "Unable to open users.txt for writing." << std::endl;
-        return false; // User creation failed
-    }
-
-    return true; // Assume user creation is successful
+    std::cerr << "Unable to open users.txt for writing." << std::endl;
+    return false; // User creation failed
 }
 
 void ClientManager::printClients()
@@ -150,8 +150,7 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     if(isUserInClientManager(username, clients))
     {
         std::cout << "User is already logged in: " << username << std::endl;
-        response = "Denied. User is already logged in.";
-        send(clientSocket, response.c_str(), response.size(), 0);
+        sendToClient(clientSocket, "Denied. User is already logged in.");
         return false; // User is already logged in
     }
     std::ifstream file("users.txt");
@@ -166,13 +165,11 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
                 std::cout << "User authenticated successfully." << std::endl;
                 client->setUser(username);
                 client->setIsAuthenticated(true);
-                response = "login confirmed";
-                send(clientSocket, response.c_str(), response.size(), 0);
+                sendToClient(clientSocket, "login confirmed");
                 return true; // User authenticated successfully
             }
         }
-        response = "Denied. User name or password incorrect.";
-        send(clientSocket, response.c_str(), response.size(), 0);
+        sendToClient(clientSocket, "Denied. User name or password incorrect.");
         file.close();
     }
     else
@@ -182,6 +179,13 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     std::cout << "Authentication failed for user: " << username << std::endl;
     return false; // Authentication failed
 }
+
+void ClientManager::sendToClient(SOCKET clientSocket, const std::string &message)
+{
+    std::cout << "sending message: " << message << std::endl;
+    send(clientSocket, message.c_str(), message.size(), 0);
+}
+
 
 // Define the static instance pointer
 ClientManager *ClientManager::instance = nullptr;
