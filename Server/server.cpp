@@ -144,6 +144,9 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
         std::getline(cmd, message);
         std::cout << "Send command received. Message: " << message << std::endl;
         return clientManager->sendTextMessage(s, message); // Command handled
+    } else if(firstToken == "logout"){
+        std::cout << "Logout command received." << std::endl;
+        return clientManager->userLogout(s); // Command handled
     }
     return false; // Command not handled
 }
