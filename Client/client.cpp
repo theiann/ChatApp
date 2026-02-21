@@ -19,17 +19,7 @@ void waitForServerResponse(SOCKET s);
 
 int main(int argc, char **argv)
 {
-
     std::string localAddress = "127.0.0.1";
-
-
-    // std::cout << "argc = " << argc << std::endl;
-    // if (argc < 2)
-    // {
-    //     std::cout << "\nUseage: client serverName\n";
-    //     return 1;
-    // }
-    
 
     // Initialize Winsock.
     WSADATA wsaData;
@@ -39,29 +29,8 @@ int main(int argc, char **argv)
         std::cout << "Error at WSAStartup()";
         return 1;
     }
-    //std::cout << "Winsock initialized." << std::endl;
-
-    // translate the server name or IP address (128.90.54.1) to resolved IP address
+    
     unsigned int ipaddr;
-    // If the user input is an alpha name for the host, use gethostbyname()
-    // If not, get host by addr (assume IPv4)
-    // std::cout << "argv[1] = " << argv[1] << std::endl;
-    // if (isalpha(argv[1][0]))
-    // { // host address is a name
-    //     hostent *remoteHost = gethostbyname(argv[1]);
-    //     if (remoteHost == NULL)
-    //     {
-    //         std::cout << "Host not found";
-    //         WSACleanup();
-    //         return 1;
-    //     }
-    //     ipaddr = *((unsigned long *)remoteHost->h_addr);
-    // }
-    // else //"128.90.54.1"
-    // {
-    //     //ipaddr = inet_addr(argv[1]);
-        
-    // }
     ipaddr = inet_addr(localAddress.c_str());
     // Create a socket.
     SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -163,7 +132,6 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     std::string message;
     std::getline(cmd, message);
     removeLeadingWhitespace(message);
-    std::cout << message << std::endl;
     if(message.length() > 256 || message.empty()){
         std::cout << "Message must be between 1 and 256 characters long." << std::endl;
         return;
