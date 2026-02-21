@@ -14,7 +14,7 @@ void login(SOCKET s, std::istringstream& cmd);
 void newUser(SOCKET s, std::istringstream& cmd);
 void sendTextMessage(SOCKET s, std::istringstream& cmd);
 void removeLeadingWhitespace(std::string& str);
-
+void logout(SOCKET s);
 void waitForServerResponse(SOCKET s);
 
 int main(int argc, char **argv)
@@ -84,6 +84,8 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
         newUser(s, cmd);
     } else if(firstToken == "send"){
         sendTextMessage(s, cmd);
+    } else if(firstToken == "logout"){
+        logout(s);
     } else {
         std::cout << "Unknown command. Available commands: login, newuser, send, exit" << std::endl;
     }
@@ -153,6 +155,13 @@ void removeLeadingWhitespace(std::string& str) {
     }
 }
 
+
+void logout(SOCKET s){
+    std::string logoutCmd = "logout";
+    send(s, logoutCmd.c_str(), logoutCmd.size(), 0);
+    waitForServerResponse(s);
+    return;
+}
 void waitForServerResponse(SOCKET s){
     char buf[MAX_LINE];
     int len = recv(s, buf, MAX_LINE, 0);
