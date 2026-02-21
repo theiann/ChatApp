@@ -12,24 +12,23 @@ void handleCmd(std::istringstream& cmd, SOCKET s);
 
 void login(SOCKET s, std::istringstream& cmd);
 void newUser(SOCKET s, std::istringstream& cmd);
+void sendTextMessage(SOCKET s, std::istringstream& cmd);
+void removeLeadingWhitespace(std::string& str);
 
 void waitForServerResponse(SOCKET s);
 
 int main(int argc, char **argv)
 {
 
-    // this code causes warnings, but it is necessary for testing, we will connect to the local server
-    argc = 3;
-    argv[1] = "127.0.0.1";
-    argv[2] = "127.0.0.1";
+    std::string localAddress = "127.0.0.1";
 
 
-    std::cout << "argc = " << argc << std::endl;
-    if (argc < 2)
-    {
-        std::cout << "\nUseage: client serverName\n";
-        return 1;
-    }
+    // std::cout << "argc = " << argc << std::endl;
+    // if (argc < 2)
+    // {
+    //     std::cout << "\nUseage: client serverName\n";
+    //     return 1;
+    // }
     
 
     // Initialize Winsock.
@@ -46,23 +45,24 @@ int main(int argc, char **argv)
     unsigned int ipaddr;
     // If the user input is an alpha name for the host, use gethostbyname()
     // If not, get host by addr (assume IPv4)
-    std::cout << "argv[1] = " << argv[1] << std::endl;
-    if (isalpha(argv[1][0]))
-    { // host address is a name
-        hostent *remoteHost = gethostbyname(argv[1]);
-        if (remoteHost == NULL)
-        {
-            std::cout << "Host not found";
-            WSACleanup();
-            return 1;
-        }
-        ipaddr = *((unsigned long *)remoteHost->h_addr);
-    }
-    else //"128.90.54.1"
-    {
-        ipaddr = inet_addr(argv[1]);
-    }
-
+    // std::cout << "argv[1] = " << argv[1] << std::endl;
+    // if (isalpha(argv[1][0]))
+    // { // host address is a name
+    //     hostent *remoteHost = gethostbyname(argv[1]);
+    //     if (remoteHost == NULL)
+    //     {
+    //         std::cout << "Host not found";
+    //         WSACleanup();
+    //         return 1;
+    //     }
+    //     ipaddr = *((unsigned long *)remoteHost->h_addr);
+    // }
+    // else //"128.90.54.1"
+    // {
+    //     //ipaddr = inet_addr(argv[1]);
+        
+    // }
+    ipaddr = inet_addr(localAddress.c_str());
     // Create a socket.
     SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (s == INVALID_SOCKET)
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     char buf[MAX_LINE];
     while (true)
     {
-        std::cout << "Type whatever you want: ";
+        //std::cout << "Type whatever you want: ";
         fgets(buf, sizeof(buf), stdin);
         std::istringstream iss(buf);
         handleCmd(iss, s);
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 void handleCmd(std::istringstream& cmd, SOCKET s){
     std::string firstToken;
     cmd >> firstToken;
-    std::cout << "First token!!!!: " << firstToken << std::endl;
+    //std::cout << "First token!!!!: " << firstToken << std::endl;
     if(firstToken == "exit"){
         // If the user types "exit", we want to exit the client program
         std::cout << "Exiting client." << std::endl;
@@ -139,8 +139,11 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
     } else if(firstToken == "newuser"){
         // If the user types "newuser username password", we want to send a newuser command to the server
         newUser(s, cmd);
+    } else if(firstToken == "send"){
+        // If the user types "send message", we want to send a message to the server
+        sendTextMessage(s, cmd);
     } else {
-        std::cout << "Unknown command. Available commands: login, newuser, exit" << std::endl;
+        std::cout << "Unknown command. Available commands: login, newuser, send, exit" << std::endl;
     }
     return;
 }
@@ -151,7 +154,7 @@ void login(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
     std::string loginCmd = "login " + username + " " + password;
-    std::cout << "Login command: " << loginCmd << std::endl;
+    //std::cout << "Login command: " << loginCmd << std::endl;
     if(username.empty() || password.empty()){
         std::cout << "Invalid login command. Usage: login username password" << std::endl;
         return;
@@ -169,7 +172,7 @@ void newUser(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
     std::string newUserCmd = "newuser " + username + " " + password;
-    std::cout << "New user command: " << newUserCmd << std::endl;
+    //std::cout << "New user command: " << newUserCmd << std::endl;
     if(username.empty() || password.empty()){
         std::cout << "Invalid newuser command. Usage: newuser username password" << std::endl;
         return;
@@ -181,6 +184,35 @@ void newUser(SOCKET s, std::istringstream& cmd){
     send(s, newUserCmd.c_str(), newUserCmd.size(), 0);
     waitForServerResponse(s);
     return;
+}
+
+void sendTextMessage(SOCKET s, std::istringstream& cmd){
+    
+    
+    std::string message;
+    std::getline(cmd, message);
+    removeLeadingWhitespace(message);
+    std::cout << message << std::endl;
+    if(message.length() > 256 || message.empty()){
+        std::cout << "Message must be between 1 and 256 characters long." << std::endl;
+        return;
+    }
+    // Remove leading whitespace from the message
+    message.erase(0, message.find_first_not_of(" \t"));
+    std::string sendCmd = "send " + message;
+    //std::cout << "Send command: " << sendCmd << std::endl;
+    send(s, sendCmd.c_str(), sendCmd.size(), 0);
+    waitForServerResponse(s);
+    return;
+}   
+
+void removeLeadingWhitespace(std::string& str) {
+    size_t firstNonWhitespace = str.find_first_not_of(" \t");
+    if (firstNonWhitespace != std::string::npos) {
+        str.erase(0, firstNonWhitespace);
+    } else {
+        str.clear(); // String is all whitespace
+    }
 }
 
 void waitForServerResponse(SOCKET s){
