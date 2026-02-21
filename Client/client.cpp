@@ -19,9 +19,9 @@ int main(int argc, char **argv)
 {
 
     // this code causes warnings, but it is necessary for testing, we will connect to the local server
-    argc = 2;
+    argc = 3;
     argv[1] = "127.0.0.1";
-    argv[0] = "127.0.0.1";
+    argv[2] = "127.0.0.1";
 
 
     std::cout << "argc = " << argc << std::endl;
@@ -191,7 +191,7 @@ void waitForServerResponse(SOCKET s){
         if (len >= MAX_LINE)
             len = MAX_LINE - 1; // prevent overflow
         buf[len] = '\0';
-        std::cout << "server says: " << buf << std::endl;
+        std::cout << buf << std::endl;
     }
     else if (len == 0)
     {

@@ -73,7 +73,7 @@ int main()
         }
 
         clientManager->addClient(s);
-        clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "pass" + std::to_string(clientManager->getClients().size()));
+        //clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "pass" + std::to_string(clientManager->getClients().size()));
         std::cout << "Client Connected." << std::endl;
         clientManager->printClients();
 
