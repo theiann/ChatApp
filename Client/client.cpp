@@ -77,7 +77,6 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
     std::transform(firstToken.begin(), firstToken.end(), firstToken.begin(),
         [](unsigned char c){ return std::tolower(c); }
     );
-    std::cout << firstToken << std::endl;
     if(firstToken == "exit"){
         std::cout << "Exiting client." << std::endl;
         closesocket(s);
@@ -139,10 +138,6 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     std::string message;
     std::getline(cmd, message);
     removeLeadingWhitespace(message);
-    // if(message.length() > 256 || message.empty()){
-    //     std::cout << "Message must be between 1 and 256 characters long." << std::endl;
-    //     return;
-    // }
     // Remove leading whitespace from the message
     message.erase(0, message.find_first_not_of(" \t"));
     std::string sendCmd = "send " + message;
