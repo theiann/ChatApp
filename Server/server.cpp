@@ -22,7 +22,7 @@ int main()
         std::cout << "Error at WSAStartup()\n";
         return 1;
     }
-    std::cout << "Winsock initialized.\n";
+    
 
     // Create a socket.
     SOCKET listenSocket;
@@ -33,7 +33,6 @@ int main()
         WSACleanup();
         return 1;
     }
-    std::cout << "Listening socket created.\n";
 
     // Bind the socket.
     sockaddr_in addr;
@@ -47,8 +46,8 @@ int main()
         WSACleanup();
         return 1;
     }
-    std::cout << "Socket binded.\n";
-
+    
+    // listening
     if (listen(listenSocket, MAX_PENDING) == SOCKET_ERROR)
     {
         printf("Error listening on socket.\n");
@@ -56,11 +55,10 @@ int main()
         WSACleanup();
         return 1;
     }
-    std::cout << "Listening on socket...\n";
 
     ClientManager *clientManager = ClientManager::getInstance();
     SOCKET s;
-    std::cout << "Waiting for a client to connect..." << std::endl;
+    std::cout << "My chat room server. Version One." << std::endl;
     while (1)
     {
         s = accept(listenSocket, NULL, NULL);
@@ -73,9 +71,6 @@ int main()
         }
 
         clientManager->addClient(s);
-        //clientManager->createUser(s, "user" + std::to_string(clientManager->getClients().size()), "pass" + std::to_string(clientManager->getClients().size()));
-        std::cout << "Client Connected." << std::endl;
-        clientManager->printClients();
 
         // Send and receive data.
         char buf[MAX_LINE];
@@ -86,7 +81,7 @@ int main()
             int len = recv(s, buf, MAX_LINE, 0);
             if (len == 0)
             {
-                std::cout << "Client disconnected." << std::endl;
+                //std::cout << "Client disconnected." << std::endl;
                 clientManager->removeClient(s);
                 closesocket(s);
                 break;
@@ -100,11 +95,11 @@ int main()
             }
             buf[len] = 0;
             //send(s, buf, strlen(buf), 0);
-            std::cout << "Received from client: " << buf << std::endl;
+            //std::cout << "Received from client: " << buf << std::endl;
             std::istringstream iss(buf);
             handleCmd(iss, s);
             memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
-            clientManager->printClients();
+            //clientManager->printClients();
         }
         // closesocket(s);
 
@@ -122,13 +117,12 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
 {
     std::string firstToken;
     cmd >> firstToken;
-    std::cout << "First token: " << firstToken << std::endl;
     ClientManager *clientManager = ClientManager::getInstance();
     if (firstToken == "login")
     {
         std::string username, password;
         cmd >> username >> password;
-        std::cout << "Login command received. Username: " << username << ", Password: " << password << std::endl;
+        //std::cout << "Login command received. Username: " << username << ", Password: " << password << std::endl;
         
         
         return clientManager->clientLogin(s, username, password); // Command handled
@@ -136,16 +130,16 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
     {
         std::string username, password;
         cmd >> username >> password;
-        std::cout << "New user command received. Username: " << username << ", Password: " << password << std::endl;
+        //std::cout << "New user command received. Username: " << username << ", Password: " << password << std::endl;
         
         return clientManager->createUser(s, username, password); // Command handled
     } else if(firstToken == "send"){
         std::string message;
         std::getline(cmd, message);
-        std::cout << "Send command received. Message: " << message << std::endl;
+        //std::cout << "Send command received. Message: " << message << std::endl;
         return clientManager->sendTextMessage(s, message); // Command handled
     } else if(firstToken == "logout"){
-        std::cout << "Logout command received." << std::endl;
+        //std::cout << "Logout command received." << std::endl;
         return clientManager->userLogout(s); // Command handled
     }
     return false; // Command not handled

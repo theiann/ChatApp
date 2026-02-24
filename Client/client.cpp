@@ -52,7 +52,7 @@ int main(int argc, char **argv)
         WSACleanup();
         return 1;
     }
-    std::cout << "Connected to server." << std::endl;
+    std::cout << "My chat room client. Version One." << std::endl;
 
     // Send and receive data.
     char buf[MAX_LINE];
@@ -73,6 +73,7 @@ int main(int argc, char **argv)
 void handleCmd(std::istringstream& cmd, SOCKET s){
     std::string firstToken;
     cmd >> firstToken;
+    firstToken = std::tolower(firstToken[0]);
     if(firstToken == "exit"){
         std::cout << "Exiting client." << std::endl;
         closesocket(s);
@@ -87,7 +88,7 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
     } else if(firstToken == "logout"){
         logout(s);
     } else {
-        std::cout << "Unknown command. Available commands: login, newuser, send, exit" << std::endl;
+        std::cout << "Unknown command. Available commands: login, newuser, send, logout, exit" << std::endl;
     }
     return;
 }
@@ -134,10 +135,10 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     std::string message;
     std::getline(cmd, message);
     removeLeadingWhitespace(message);
-    if(message.length() > 256 || message.empty()){
-        std::cout << "Message must be between 1 and 256 characters long." << std::endl;
-        return;
-    }
+    // if(message.length() > 256 || message.empty()){
+    //     std::cout << "Message must be between 1 and 256 characters long." << std::endl;
+    //     return;
+    // }
     // Remove leading whitespace from the message
     message.erase(0, message.find_first_not_of(" \t"));
     std::string sendCmd = "send " + message;

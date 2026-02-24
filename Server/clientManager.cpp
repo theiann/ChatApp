@@ -35,7 +35,6 @@ std::list<Client> &ClientManager::getClients() { return clients; }
 void ClientManager::addClient(SOCKET clientSocket)
 {
     clients.emplace_back(clientSocket);
-    std::cout << "Client added. Total clients: " << clients.size() << std::endl;
 }
 
 // removes a client from the list of clients, leaves the rest of the client management to the Client class
@@ -43,7 +42,6 @@ void ClientManager::removeClient(SOCKET clientSocket)
 {
     clients.remove_if([clientSocket](const Client &client)
                       { return client.getSocket() == clientSocket; });
-    std::cout << "Client removed. Total clients: " << clients.size() << std::endl;
 }
 
 Client *ClientManager::getClient(SOCKET clientSocket)
@@ -96,13 +94,12 @@ bool isUserInClientManager(const std::string &username, const std::list<Client> 
 
 bool ClientManager::createUser(SOCKET clientSocket, const std::string &username, const std::string &password)
 {
-    std::cout << "Creating user: " << username << " with password: " << password << std::endl;
     std::ofstream file("users.txt", std::ios::app);
     std::string response;
     if (isUserExists(username))
     {
         file.close();
-        std::cout << "User already exists, cannot create user." << std::endl;
+        //std::cout << "User already exists, cannot create user." << std::endl;
         sendToClient(clientSocket, "Denied. User account already exists.");
         return false; // User creation failed
     }
@@ -110,7 +107,7 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
     {
         file << "\n(" << username << ", " << password << ")";
         file.close();
-        std::cout << "User created successfully." << std::endl;
+        std::cout << "New user account created" << std::endl;
         sendToClient(clientSocket, "New user account created. Please login.");
         return true;
     }
@@ -133,13 +130,13 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     Client *client = getClient(clientSocket);
     if (client == nullptr)
     {
-        std::cout << "Client not found for socket: " << clientSocket << std::endl;
+        //std::cout << "Client not found for socket: " << clientSocket << std::endl;
         return false; // Client not found
     }
     std::string response;
     if (isUserInClientManager(username, clients))
     {
-        std::cout << "User is already logged in: " << username << std::endl;
+        //std::cout << "User is already logged in: " << username << std::endl;
         sendToClient(clientSocket, "Denied. User is already logged in.");
         return false; // User is already logged in
     }
@@ -152,7 +149,7 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
             if (line.find("(" + username + ", " + password + ")") != std::string::npos)
             {
                 file.close();
-                std::cout << "User authenticated successfully." << std::endl;
+                std::cout << username << " login." << std::endl;
                 client->setUser(username);
                 client->setIsAuthenticated(true);
                 sendToClient(clientSocket, "login confirmed");
@@ -166,7 +163,6 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
     {
         std::cerr << "Unable to open users.txt for reading." << std::endl;
     }
-    std::cout << "Authentication failed for user: " << username << std::endl;
     return false; // Authentication failed
 }
 
@@ -177,6 +173,7 @@ bool ClientManager::userLogout(SOCKET clientSocket)
     {
         std::string username = client->getUser();
         client->logout();
+        std::cout << username << " logout." << std::endl;
         sendToClient(clientSocket, username + " left.");
         return true; // Command handled
     }
@@ -197,11 +194,16 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
     }
     if (!client->getIsAuthenticated())
     {
-        std::cout << "Client is not authenticated, cannot send message." << std::endl;
         sendToClient(clientSocket, "Denied. Please login to send messages.");
         return false; // Client is not authenticated
     }
+    if (message.length() < 1 || message.length() > 256 || message.find_first_not_of(" \t") == std::string::npos )
+    {
+        sendToClient(clientSocket, "Denied. Message must be between 1 and 256 characters long.");
+        return false; // Message is empty or too long
+    }
     std::string messageWithUser = client->getUser() + ":" + message; // Prepend the username to the message
+    std::cout << messageWithUser << std::endl;
     sendToClient(clientSocket, messageWithUser);                     // Send the message to the client
     return true;                                                     // Message sent successfully
 }
@@ -209,7 +211,6 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
 // this is just to send a single message to a client, it does not handle any logic for sending messages to multiple clients or anything like that, it just sends the message to the specified client
 void ClientManager::sendToClient(SOCKET clientSocket, const std::string &message)
 {
-    std::cout << "sending message: " << message << std::endl;
     send(clientSocket, message.c_str(), message.size(), 0);
 }
 
