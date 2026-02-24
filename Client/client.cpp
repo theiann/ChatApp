@@ -4,6 +4,7 @@
 #include <cctype>
 #include <cstring>
 #include <sstream>
+#include <algorithm>
 
 #define SERVER_PORT 15377
 #define MAX_LINE 256
@@ -73,7 +74,10 @@ int main(int argc, char **argv)
 void handleCmd(std::istringstream& cmd, SOCKET s){
     std::string firstToken;
     cmd >> firstToken;
-    firstToken = std::tolower(firstToken[0]);
+    std::transform(firstToken.begin(), firstToken.end(), firstToken.begin(),
+        [](unsigned char c){ return std::tolower(c); }
+    );
+    std::cout << firstToken << std::endl;
     if(firstToken == "exit"){
         std::cout << "Exiting client." << std::endl;
         closesocket(s);
