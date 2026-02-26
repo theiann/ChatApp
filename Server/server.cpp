@@ -4,6 +4,8 @@
 #include <ws2tcpip.h>
 #include "clientManager.hpp"
 
+// COMPILE COMMAND g++ -g *.cpp -o server.exe -lws2_32
+
 #define SERVER_PORT 15377
 #define MAX_PENDING 5
 #define MAX_LINE 256

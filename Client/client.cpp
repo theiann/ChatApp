@@ -6,6 +6,9 @@
 #include <sstream>
 #include <algorithm>
 
+// COMPILE COMMAND: g++ -g *.cpp -o client.exe -lws2_32
+
+
 #define SERVER_PORT 15377
 #define MAX_LINE 256
 

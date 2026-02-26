@@ -40,7 +40,9 @@ void ClientManager::addClient(SOCKET clientSocket)
 // removes a client from the list of clients, leaves the rest of the client management to the Client class
 void ClientManager::removeClient(SOCKET clientSocket)
 {
-    ClientManager::userLogout(clientSocket); // Logout the user before removing the client
+    if(ClientManager::getClient(clientSocket)->getIsAuthenticated()){
+        ClientManager::userLogout(clientSocket);
+    }
     clients.remove_if([clientSocket](const Client &client)
                       { return client.getSocket() == clientSocket; });
 }
