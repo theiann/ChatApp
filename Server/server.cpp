@@ -6,6 +6,15 @@
 
 // COMPILE COMMAND g++ -g *.cpp -o server.exe -lws2_32
 
+// Name: XXXXXXXXXXXXXX
+// Date: 2/26/2026
+// Description: This is the server for a simple chat room application. It listens for incoming connections from clients and handles commands sent by the clients.
+// The server maintains a list of connected clients and their login status. 
+// It processes commands such as login, newuser, send, and logout, and sends appropriate responses back to the clients.
+// It uses a ClientManager class to manage client connections and user accounts. The server runs indefinitely, accepting new messages and processing their commands.
+// Accounts are stored in a text file called "accounts.txt" and are loaded into memory when the server starts. The server also handles client disconnections gracefully.
+
+
 #define SERVER_PORT 15377
 #define MAX_PENDING 5
 #define MAX_LINE 256

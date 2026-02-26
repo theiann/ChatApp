@@ -8,6 +8,19 @@
 
 // COMPILE COMMAND: g++ -g *.cpp -o client.exe -lws2_32
 
+// Name: XXXXXXXXXXXXXX
+// Date: 2/26/2026
+// Description: This is the client for a simple chat room application. It connects to a server
+// and allows the user to login, create a new user, send messages, and logout. The client sends commands to the server and waits for responses.
+//
+// Commands:
+// login username password - Logs in with the specified username and password.
+// newuser username password - Creates a new user with the specified username and password.
+// send message - Sends a message to the chat room.
+// logout - Logs out of the chat room.
+// The client also handles invalid commands and displays appropriate error messages.
+
+
 
 #define SERVER_PORT 15377
 #define MAX_LINE 256

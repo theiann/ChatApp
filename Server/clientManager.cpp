@@ -174,6 +174,11 @@ bool ClientManager::userLogout(SOCKET clientSocket)
     Client *client = getClient(clientSocket);
     if (client != nullptr)
     {
+        if (client->getIsAuthenticated() == false)
+        {
+            sendToClient(clientSocket, "Denied. You are not logged in.");
+            return false; // Client is not logged in
+        }
         std::string username = client->getUser();
         client->logout();
         std::cout << username << " logout." << std::endl;
