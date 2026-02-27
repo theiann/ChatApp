@@ -99,6 +99,10 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
 {
     std::ofstream file("users.txt", std::ios::app);
     std::string response;
+    if(ClientManager::getClient(clientSocket)->getIsAuthenticated()){
+        sendToClient(clientSocket, "Denied. You are already logged in.");
+        return false; // Client is already logged in
+    }
     if (isUserExists(username))
     {
         file.close();
@@ -137,6 +141,10 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
         return false; // Client not found
     }
     std::string response;
+    if(client->getIsAuthenticated()){
+        sendToClient(clientSocket, "Denied. You are already logged in.");
+        return false; // Client is already logged in
+    }
     if (isUserInClientManager(username, clients))
     {
         //std::cout << "User is already logged in: " << username << std::endl;
