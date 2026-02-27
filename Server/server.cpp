@@ -92,7 +92,6 @@ int main()
             int len = recv(s, buf, MAX_LINE, 0);
             if (len == 0)
             {
-                //std::cout << "Client disconnected." << std::endl;
                 clientManager->removeClient(s);
                 closesocket(s);
                 break;
@@ -105,17 +104,10 @@ int main()
                 break;
             }
             buf[len] = 0;
-            //send(s, buf, strlen(buf), 0);
-            //std::cout << "Received from client: " << buf << std::endl;
             std::istringstream iss(buf);
             handleCmd(iss, s);
             memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
-            //clientManager->printClients();
         }
-        // closesocket(s);
-
-        // clientManager->removeClient(s);
-        // std::cout << "Client Closed." << std::endl;
     }
 
     closesocket(listenSocket);
@@ -123,7 +115,7 @@ int main()
     return 0;
 }
 
-
+// This function takes a command from the client and processes it. It returns true if the command was handled, and false if the command was not recognized.
 bool handleCmd(std::istringstream &cmd, SOCKET s)
 {
     std::string firstToken;
