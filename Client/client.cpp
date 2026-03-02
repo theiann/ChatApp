@@ -5,14 +5,31 @@
 #include <cstring>
 #include <sstream>
 #include <algorithm>
+#include <thread>
+#include <limits>
 
-// COMPILE COMMAND: g++ -g *.cpp -o client.exe -lws2_32
+#include <mutex>
+#include <atomic>
+
+
+#ifdef _WIN32
+#include <conio.h>
+#include <windows.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#endif
+
+std::mutex consoleMutex;
+std::string currentInput;
+
+// COMPILE COMMAND: g++ -g *.cpp isocline/src/isocline.c -o client.exe -lws2_32
 
 // Name: XXXXXXXXXXXXXX
 // Date: 2/26/2026
 // Description: This is the client for a simple chat room application. It connects to a server
 // and allows the user to login, create a new user, send messages, and logout. The client sends commands to the server and waits for responses.
-//
+//s
 // Commands:
 // login username password - Logs in with the specified username and password.
 // newuser username password - Creates a new user with the specified username and password.
@@ -33,6 +50,100 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd);
 void removeLeadingWhitespace(std::string& str);
 void logout(SOCKET s);
 void waitForServerResponse(SOCKET s);
+void waitForServerResponseLoop(SOCKET s);
+void printServerMessage(const std::string& message);
+
+
+
+void printServerMessage(const std::string& message) {
+    std::lock_guard<std::mutex> lock(consoleMutex);
+
+    // Erase current line
+    std::cout << "\r" << std::string(currentInput.size() + 32, ' ') << "\r";
+
+    // Print server message
+    std::cout << message << "\n";
+
+    // Reprint prompt and what the user was typing
+    std::cout << currentInput;
+    std::cout.flush();
+}
+
+std::string readInput() {
+#ifdef _WIN32
+    //std::cout << "> ";
+    std::cout.flush();
+
+    char c;
+    while (true) {
+        c = _getch();
+
+        std::lock_guard<std::mutex> lock(consoleMutex);
+
+        if (c == '\r') {                        // Enter
+            std::cout << "\n";
+            std::string submitted = currentInput;
+            currentInput.clear();
+            return submitted;
+
+        } else if (c == '\b') {                 // Backspace
+            if (!currentInput.empty()) {
+                currentInput.pop_back();
+                std::cout << "\b \b";
+                std::cout.flush();
+            }
+
+        } else if (c >= 32 && c < 127) {        // Printable characters
+            currentInput += c;
+            std::cout << c;
+            std::cout.flush();
+        }
+    }
+#else
+    termios oldt;
+    tcgetattr(STDIN_FILENO, &oldt);
+    termios newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    std::cout << "> ";
+    std::cout.flush();
+
+    char c;
+    while (true) {
+        read(STDIN_FILENO, &c, 1);
+
+        std::lock_guard<std::mutex> lock(consoleMutex);
+
+        if (c == '\n') {
+            std::cout << "\n";
+            std::string submitted = currentInput;
+            currentInput.clear();
+            tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+            return submitted;
+
+        } else if (c == 127 || c == '\b') {
+            if (!currentInput.empty()) {
+                currentInput.pop_back();
+                std::cout << "\b \b";
+                std::cout.flush();
+            }
+
+        } else if (c >= 32 && c < 127) {
+            currentInput += c;
+            std::cout << c;
+            std::cout.flush();
+        }
+    }
+#endif
+}
+
+
+
+
+
+
+
 
 int main(int argc, char **argv)
 {
@@ -70,15 +181,17 @@ int main(int argc, char **argv)
         return 1;
     }
     std::cout << "My chat room client. Version One." << std::endl;
-
+    std::thread responseThread(waitForServerResponseLoop, s);
+    responseThread.detach();
     // Send and receive data.
     char buf[MAX_LINE];
     while (true)
     {
-        // get user input
-        fgets(buf, sizeof(buf), stdin);
-        std::istringstream iss(buf);
-        handleCmd(iss, s);
+        std::string line;
+        while (!(line = readInput()).empty()) {
+            std::istringstream iss(line);
+            handleCmd(iss, s);
+        }
     }
 
     fflush(stdout);
@@ -127,7 +240,7 @@ void login(SOCKET s, std::istringstream& cmd){
         return;
     }
     send(s, loginCmd.c_str(), loginCmd.size(), 0);
-    waitForServerResponse(s);
+    //waitForServerResponse(s);
     return;
 }
 
@@ -144,7 +257,7 @@ void newUser(SOCKET s, std::istringstream& cmd){
         return;
     }
     send(s, newUserCmd.c_str(), newUserCmd.size(), 0);
-    waitForServerResponse(s);
+    //waitForServerResponse(s);
     return;
 }
 
@@ -158,7 +271,7 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     message.erase(0, message.find_first_not_of(" \t"));
     std::string sendCmd = "send " + message;
     send(s, sendCmd.c_str(), sendCmd.size(), 0);
-    waitForServerResponse(s);
+    //waitForServerResponse(s);
     return;
 }   
 
@@ -175,7 +288,7 @@ void removeLeadingWhitespace(std::string& str) {
 void logout(SOCKET s){
     std::string logoutCmd = "logout";
     send(s, logoutCmd.c_str(), logoutCmd.size(), 0);
-    waitForServerResponse(s);
+    //waitForServerResponse(s);
     return;
 }
 void waitForServerResponse(SOCKET s){
@@ -197,4 +310,33 @@ void waitForServerResponse(SOCKET s){
         std::cout << "recv failed: " << WSAGetLastError() << std::endl;
     }
     memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+}
+
+void waitForServerResponseLoop(SOCKET s){
+    while(true){
+        
+
+
+        char buf[MAX_LINE];
+        int len = recv(s, buf, MAX_LINE, 0);
+        
+
+        if (len > 0)
+        {
+            if (len >= MAX_LINE)
+                len = MAX_LINE - 1; // prevent overflow
+            buf[len] = '\0';
+            printServerMessage(std::string(buf));
+        }
+        else if (len == 0)
+        {
+            printServerMessage("Server closed connection.");
+            break;
+        }
+        else
+        {
+            printServerMessage("recv failed: " + std::to_string(WSAGetLastError()));
+        }
+        memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
+    }
 }

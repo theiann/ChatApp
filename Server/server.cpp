@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <winsock2.h>
+#include <thread>
 #include <ws2tcpip.h>
 #include "clientManager.hpp"
 
@@ -19,6 +20,19 @@
 #define MAX_PENDING 5
 #define MAX_LINE 256
 #define MAX_CLIENTS 3
+
+
+void spam(SOCKET s)
+{
+    ClientManager *clientManager = ClientManager::getInstance();
+    std::string message = "This is a spam message from the server.";
+    while(true)
+    {
+        Sleep(5000); // Sleep for 5 seconds before sending the next message
+        std::cout << message << std::endl;
+        clientManager->sendToClient(s, message);
+    }
+}
 
 
 bool handleCmd(std::istringstream& cmd, SOCKET s);
@@ -66,7 +80,7 @@ int main()
         WSACleanup();
         return 1;
     }
-
+    
     ClientManager *clientManager = ClientManager::getInstance();
     SOCKET s;
     std::cout << "My chat room server. Version One." << std::endl;
@@ -87,6 +101,9 @@ int main()
         char buf[MAX_LINE];
 
         // another loop!
+        std::thread spamThread(spam, s);
+        spamThread.detach();
+        
         while (1)
         {
             int len = recv(s, buf, MAX_LINE, 0);
