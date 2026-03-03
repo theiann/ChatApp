@@ -26,19 +26,6 @@ MessageQueue messageQueue;
 
 void listenForClients(SOCKET listenSocket);
 void listenForMessages(SOCKET s);
-
-void spam(SOCKET s)
-{
-    ClientManager *clientManager = ClientManager::getInstance();
-    std::string message = "This is a spam message from the server.";
-    while (true)
-    {
-        Sleep(5000); // Sleep for 5 seconds before sending the next message
-        std::cout << message << std::endl;
-        clientManager->sendToClient(s, message);
-    }
-}
-
 bool handleCmd(std::istringstream &cmd, SOCKET s);
 
 int main()
@@ -86,11 +73,15 @@ int main()
 
     ClientManager *clientManager = ClientManager::getInstance();
     std::cout << "My chat room server. Version One." << std::endl;
+
+    // Start a thread to listen for incoming client connections
     std::thread clientListenerThread(listenForClients, listenSocket);
     clientListenerThread.detach();
 
+    // Main thread will continuously check the message queue for new messages from clients and send them to the handleCmd function for processing.
+    // This allows us to process client commands in the main thread while the client listener thread handles incoming connections and message listener threads handle incoming messages from clients.
     while(1){
-        Sleep(50); // Sleep for a while to reduce CPU usage
+        Sleep(100); // Sleep for a while to reduce CPU usage
         Message msg = Message(0, ""); // Initialize with default values
         if(messageQueue.pop(msg)){
             std::istringstream iss(msg.text);
@@ -113,16 +104,12 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
     {
         std::string username, password;
         cmd >> username >> password;
-        // std::cout << "Login command received. Username: " << username << ", Password: " << password << std::endl;
-
         return clientManager->clientLogin(s, username, password); // Command handled
     }
     else if (firstToken == "newuser")
     {
         std::string username, password;
         cmd >> username >> password;
-        // std::cout << "New user command received. Username: " << username << ", Password: " << password << std::endl;
-
         return clientManager->createUser(s, username, password); // Command handled
     }
     else if (firstToken == "send")
@@ -130,12 +117,10 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
         std::string message, recipient;
         cmd >> recipient;
         std::getline(cmd, message);
-        // std::cout << "Send command received. Message: " << message << std::endl;
         return clientManager->sendTextMessage(s, message, recipient); // Command handled
     }
     else if (firstToken == "logout")
     {
-        // std::cout << "Logout command received." << std::endl;
         return clientManager->userLogout(s); // Command handled
     }
     else if(firstToken == "who")
@@ -146,6 +131,8 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
     return false; // Command not handled
 }
 
+// Function to listen for incoming client connections and start a new thread to listen for messages from each connected client
+// If the server is at max capacity, it sends a message to the client and closes the connection.
 void listenForClients(SOCKET listenSocket)
 {
     while (true)
@@ -166,11 +153,17 @@ void listenForClients(SOCKET listenSocket)
         }
         ClientManager::getInstance()->addClient(s);
         currentConnections++;
+
+        // Start a thread to listen for messages from this newly connected client
         std::thread messageListenerThread(listenForMessages, s);
         messageListenerThread.detach();
     }
 }
 
+
+// This function listens for messages from a specific client socket.
+// When a message is received, it is added to the message queue for processing by the main thread. 
+//If the client disconnects, the function removes the client from the ClientManager and closes the socket.
 void listenForMessages(SOCKET s)
 {
     char buf[MAX_LINE];
@@ -179,24 +172,22 @@ void listenForMessages(SOCKET s)
         int len = recv(s, buf, MAX_LINE, 0);
         if (len == 0)
         {
-            ClientManager::getInstance()->removeClient(s);
-            currentConnections--;
-            closesocket(s);
-            break;
+            break; // Connection closed by client
         }
         else if (len == SOCKET_ERROR)
         {
             std::cout << "recv failed: " << WSAGetLastError() << std::endl;
-            ClientManager::getInstance()->removeClient(s);
-            currentConnections--;
-            closesocket(s);
-            break;
+            break; // Error occurred
         }
         buf[len] = 0;
         std::istringstream iss(buf);
         messageQueue.push(Message(s, iss.str()));
         memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
     }
+    ClientManager::getInstance()->removeClient(s);
+    currentConnections--;
+    closesocket(s);
+    return;
 }
 
 
