@@ -103,6 +103,10 @@ bool ClientManager::createUser(SOCKET clientSocket, const std::string &username,
         sendToClient(clientSocket, "Denied. You are already logged in.");
         return false; // Client is already logged in
     }
+    if(username == "all"){
+        sendToClient(clientSocket, "Denied. 'all' is a reserved username.");
+        return false; // Invalid username
+    }
     if (isUserExists(username))
     {
         file.close();
