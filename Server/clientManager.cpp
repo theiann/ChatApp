@@ -223,7 +223,7 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
     if(recipient != "all"){
         for(const auto& client_l : clients){
             if(client_l.getUser() == recipient && client_l.getIsAuthenticated()){
-                std::string privMessage = client->getUser() + " (to " + recipient + "): " + message;
+                std::string privMessage = client->getUser() + " (to " + recipient + "):" + message;
                 std::cout << privMessage << std::endl;
                 sendToClient(client_l.getSocket(), messageWithUser);
                 return true; // Message sent successfully
