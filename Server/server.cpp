@@ -2,6 +2,7 @@
 #include <sstream>
 #include <winsock2.h>
 #include <thread>
+#include <atomic>
 #include <ws2tcpip.h>
 #include "clientManager.hpp"
 
@@ -20,7 +21,8 @@
 #define MAX_LINE 256
 #define MAX_CLIENTS 3
 
-
+std::atomic<int> currentConnections(0);
+MessageQueue messageQueue;
 
 void listenForClients(SOCKET listenSocket);
 void listenForMessages(SOCKET s);
@@ -83,13 +85,17 @@ int main()
     }
 
     ClientManager *clientManager = ClientManager::getInstance();
-    SOCKET s;
     std::cout << "My chat room server. Version One." << std::endl;
     std::thread clientListenerThread(listenForClients, listenSocket);
     clientListenerThread.detach();
 
     while(1){
-        Sleep(1000); // Sleep for a while to reduce CPU usage
+        Sleep(50); // Sleep for a while to reduce CPU usage
+        Message msg = Message(0, ""); // Initialize with default values
+        if(messageQueue.pop(msg)){
+            std::istringstream iss(msg.text);
+            handleCmd(iss, msg.sender);
+        }
     }
 
     closesocket(listenSocket);
@@ -121,15 +127,21 @@ bool handleCmd(std::istringstream &cmd, SOCKET s)
     }
     else if (firstToken == "send")
     {
-        std::string message;
+        std::string message, recipient;
+        cmd >> recipient;
         std::getline(cmd, message);
         // std::cout << "Send command received. Message: " << message << std::endl;
-        return clientManager->sendTextMessage(s, message); // Command handled
+        return clientManager->sendTextMessage(s, message, recipient); // Command handled
     }
     else if (firstToken == "logout")
     {
         // std::cout << "Logout command received." << std::endl;
         return clientManager->userLogout(s); // Command handled
+    }
+    else if(firstToken == "who")
+    {
+        clientManager->listOnlineUsers(s);
+        return true; // Command handled
     }
     return false; // Command not handled
 }
@@ -146,7 +158,14 @@ void listenForClients(SOCKET listenSocket)
             WSACleanup();
             exit(1);    
         }
+        if(currentConnections.load() >= MAX_CLIENTS){
+            std::string message = "Server is full. Try again later.";
+            send(s, message.c_str(), message.size(), 0);
+            closesocket(s);
+            continue;
+        }
         ClientManager::getInstance()->addClient(s);
+        currentConnections++;
         std::thread messageListenerThread(listenForMessages, s);
         messageListenerThread.detach();
     }
@@ -161,6 +180,7 @@ void listenForMessages(SOCKET s)
         if (len == 0)
         {
             ClientManager::getInstance()->removeClient(s);
+            currentConnections--;
             closesocket(s);
             break;
         }
@@ -168,12 +188,18 @@ void listenForMessages(SOCKET s)
         {
             std::cout << "recv failed: " << WSAGetLastError() << std::endl;
             ClientManager::getInstance()->removeClient(s);
+            currentConnections--;
             closesocket(s);
             break;
         }
         buf[len] = 0;
         std::istringstream iss(buf);
-        handleCmd(iss, s);
+        std::cout << "Current number of connections: " << currentConnections.load() << std::endl;
+        ClientManager::getInstance()->printClients();
+        messageQueue.push(Message(s, iss.str()));
         memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
     }
 }
+
+
+

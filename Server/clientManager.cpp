@@ -190,7 +190,7 @@ bool ClientManager::userLogout(SOCKET clientSocket)
         std::string username = client->getUser();
         client->logout();
         std::cout << username << " logout." << std::endl;
-        sendToClient(clientSocket, username + " left.");
+        broadcastMessage(username + " left.");
         return true; // Command handled
     }
     else
@@ -200,7 +200,7 @@ bool ClientManager::userLogout(SOCKET clientSocket)
     }
 }
 
-bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &message)
+bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &message, const std::string &recipient)
 {
     Client *client = ClientManager::getInstance()->getClient(clientSocket);
     if (client == nullptr)
@@ -220,7 +220,17 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
     }
     std::string messageWithUser = client->getUser() + ":" + message; // Prepend the username to the message
     std::cout << messageWithUser << std::endl;
-    sendToClient(clientSocket, messageWithUser);                     // Send the message to the client
+    if(recipient != "all"){
+        for(const auto& client : clients){
+            if(client.getUser() == recipient && client.getIsAuthenticated()){
+                sendToClient(client.getSocket(), messageWithUser);
+                return true; // Message sent successfully
+            }
+        }
+        sendToClient(clientSocket, "Denied. Recipient not found or not logged in.");
+        return false; // Recipient not found or not logged in
+    }
+    broadcastToAllExceptSender(messageWithUser, clientSocket);                     // Send the message to all clients except the sender
     return true;                                                     // Message sent successfully
 }
 
@@ -228,6 +238,28 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
 void ClientManager::sendToClient(SOCKET clientSocket, const std::string &message)
 {
     send(clientSocket, message.c_str(), message.size(), 0);
+}
+
+void ClientManager::broadcastMessage(const std::string &message)
+{
+    for (const auto &client : clients)
+    {
+        if (client.getIsAuthenticated())
+        {
+            sendToClient(client.getSocket(), message);
+        }
+    }
+}
+
+void ClientManager::broadcastToAllExceptSender(const std::string &message, SOCKET exceptSocket)
+{
+    for (const auto &client : clients)
+    {
+        if (client.getIsAuthenticated() && client.getSocket() != exceptSocket)
+        {
+            sendToClient(client.getSocket(), message);
+        }
+    }
 }
 
 // Define the static instance pointer
