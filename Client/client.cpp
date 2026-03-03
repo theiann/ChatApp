@@ -43,18 +43,16 @@ std::string currentInput;
 #define MAX_LINE 256
 
 void handleCmd(std::istringstream& cmd, SOCKET s);
-
 void login(SOCKET s, std::istringstream& cmd);
 void newUser(SOCKET s, std::istringstream& cmd);
 void sendTextMessage(SOCKET s, std::istringstream& cmd);
 void removeLeadingWhitespace(std::string& str);
 void logout(SOCKET s);
-void waitForServerResponse(SOCKET s);
 void waitForServerResponseLoop(SOCKET s);
 void printServerMessage(const std::string& message);
 
 
-
+// Function to print server messages without interfering with user input
 void printServerMessage(const std::string& message) {
     std::lock_guard<std::mutex> lock(consoleMutex);
 
@@ -69,6 +67,10 @@ void printServerMessage(const std::string& message) {
     std::cout.flush();
 }
 
+// Function to read user input character by character, allowing for real-time display and editing
+// This stupid function is necessary because the standard input functions block until the user presses enter, 
+// which prevents us from displaying server messages in real-time while the user is typing.
+// Works for both Windows and Unix-like systems, though I've only tested it on Windows. Cross your fingers for Unix compatibility!
 std::string readInput() {
 #ifdef _WIN32
     //std::cout << "> ";
@@ -200,6 +202,8 @@ int main(int argc, char **argv)
     return 0;
 }
 
+
+// Function to handle user commands and call the appropriate functions to send commands to the server
 void handleCmd(std::istringstream& cmd, SOCKET s){
     std::string firstToken;
     cmd >> firstToken;
@@ -230,7 +234,7 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
 }
 
 
-
+// Function to handle the login command, validating input and sending the command to the server
 void login(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
@@ -244,10 +248,11 @@ void login(SOCKET s, std::istringstream& cmd){
         return;
     }
     send(s, loginCmd.c_str(), loginCmd.size(), 0);
-    //waitForServerResponse(s);
     return;
 }
 
+
+// Function to handle the newuser command, validating input and sending the command to the server
 void newUser(SOCKET s, std::istringstream& cmd){
     std::string username, password;
     cmd >> username >> password;
@@ -261,10 +266,11 @@ void newUser(SOCKET s, std::istringstream& cmd){
         return;
     }
     send(s, newUserCmd.c_str(), newUserCmd.size(), 0);
-    //waitForServerResponse(s);
     return;
 }
 
+
+// Function to handle the send command, validating input and sending the command to the server
 void sendTextMessage(SOCKET s, std::istringstream& cmd){
     
     
@@ -274,11 +280,15 @@ void sendTextMessage(SOCKET s, std::istringstream& cmd){
     // Remove leading whitespace from the message
     message.erase(0, message.find_first_not_of(" \t"));
     std::string sendCmd = "send " + message;
+    if (message.size() > 256) {
+        std::cout << "Denied. Message must be between 1 and 256 characters long." << std::endl;
+        return;
+    }
     send(s, sendCmd.c_str(), sendCmd.size(), 0);
-    //waitForServerResponse(s);
     return;
 }   
 
+// Function to remove leading whitespace from a string
 void removeLeadingWhitespace(std::string& str) {
     size_t firstNonWhitespace = str.find_first_not_of(" \t");
     if (firstNonWhitespace != std::string::npos) {
@@ -289,33 +299,18 @@ void removeLeadingWhitespace(std::string& str) {
 }
 
 
+// Function to handle the logout command, sending the command to the server
+// The server will handle the logout and close the connection, so we just send the command and wait for the response
 void logout(SOCKET s){
     std::string logoutCmd = "logout";
     send(s, logoutCmd.c_str(), logoutCmd.size(), 0);
     //waitForServerResponse(s);
     return;
 }
-void waitForServerResponse(SOCKET s){
-    char buf[MAX_LINE];
-    int len = recv(s, buf, MAX_LINE, 0);
-    if (len > 0)
-    {
-        if (len >= MAX_LINE)
-            len = MAX_LINE - 1; // prevent overflow
-        buf[len] = '\0';
-        std::cout << buf << std::endl;
-    }
-    else if (len == 0)
-    {
-        std::cout << "Server closed connection." << std::endl;
-    }
-    else
-    {
-        std::cout << "recv failed: " << WSAGetLastError() << std::endl;
-    }
-    memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
-}
 
+
+// Function to wait for a response from the server and print it to the console
+// This function is called in a separate thread to continuously listen for server messages without blocking user input
 void waitForServerResponseLoop(SOCKET s){
     while(true){
         
