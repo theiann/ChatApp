@@ -219,8 +219,12 @@ void handleCmd(std::istringstream& cmd, SOCKET s){
         sendTextMessage(s, cmd);
     } else if(firstToken == "logout"){
         logout(s);
+    } else if(firstToken == "who"){
+        // This command is handled in the server, so we just send it to the server and wait for the response
+        std::string whoCmd = "who";
+        send(s, whoCmd.c_str(), whoCmd.size(), 0);
     } else {
-        std::cout << "Unknown command. Available commands: login, newuser, send, logout, exit" << std::endl;
+        std::cout << "Unknown command. Available commands: login, newuser, send, who, logout, exit" << std::endl;
     }
     return;
 }

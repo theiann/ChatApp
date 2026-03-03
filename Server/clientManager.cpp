@@ -164,6 +164,7 @@ bool ClientManager::clientLogin(SOCKET clientSocket, const std::string &username
                 client->setUser(username);
                 client->setIsAuthenticated(true);
                 sendToClient(clientSocket, "login confirmed");
+                broadcastToAllExceptSender(username + " joins.", clientSocket);
                 return true; // User authenticated successfully
             }
         }
@@ -260,6 +261,23 @@ void ClientManager::broadcastToAllExceptSender(const std::string &message, SOCKE
             sendToClient(client.getSocket(), message);
         }
     }
+}
+
+void ClientManager::listOnlineUsers(SOCKET clientSocket)
+{
+    std::string userList;
+    for (const auto &client : clients)
+    {
+        if (client.getIsAuthenticated())
+        {
+            userList += client.getUser() + ", ";
+        }
+    }
+    if (!userList.empty()) {
+        userList.pop_back(); // Remove trailing comma
+        userList.pop_back(); // Remove trailing space
+    }
+    sendToClient(clientSocket, userList);
 }
 
 // Define the static instance pointer
