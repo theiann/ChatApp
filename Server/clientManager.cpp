@@ -220,17 +220,19 @@ bool ClientManager::sendTextMessage(SOCKET clientSocket, const std::string &mess
         return false; // Message is empty or too long
     }
     std::string messageWithUser = client->getUser() + ":" + message; // Prepend the username to the message
-    std::cout << messageWithUser << std::endl;
     if(recipient != "all"){
-        for(const auto& client : clients){
-            if(client.getUser() == recipient && client.getIsAuthenticated()){
-                sendToClient(client.getSocket(), messageWithUser);
+        for(const auto& client_l : clients){
+            if(client_l.getUser() == recipient && client_l.getIsAuthenticated()){
+                std::string privMessage = client->getUser() + " (to " + recipient + "): " + message;
+                std::cout << privMessage << std::endl;
+                sendToClient(client_l.getSocket(), messageWithUser);
                 return true; // Message sent successfully
             }
         }
         sendToClient(clientSocket, "Denied. Recipient not found or not logged in.");
         return false; // Recipient not found or not logged in
     }
+    std::cout << messageWithUser << std::endl;
     broadcastToAllExceptSender(messageWithUser, clientSocket);                     // Send the message to all clients except the sender
     return true;                                                     // Message sent successfully
 }
@@ -265,6 +267,12 @@ void ClientManager::broadcastToAllExceptSender(const std::string &message, SOCKE
 
 void ClientManager::listOnlineUsers(SOCKET clientSocket)
 {
+    Client *client = ClientManager::getInstance()->getClient(clientSocket);
+    if (!client->getIsAuthenticated())
+    {
+        sendToClient(clientSocket, "Denied. Please login to use this command.");
+        return; // Client is not authenticated
+    }
     std::string userList;
     for (const auto &client : clients)
     {

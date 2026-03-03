@@ -194,8 +194,6 @@ void listenForMessages(SOCKET s)
         }
         buf[len] = 0;
         std::istringstream iss(buf);
-        std::cout << "Current number of connections: " << currentConnections.load() << std::endl;
-        ClientManager::getInstance()->printClients();
         messageQueue.push(Message(s, iss.str()));
         memset(buf, 0, MAX_LINE); // Clear the buffer for the next input
     }
