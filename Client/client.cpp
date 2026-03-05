@@ -261,6 +261,15 @@ void newUser(SOCKET s, std::istringstream& cmd){
         std::cout << "Invalid newuser command. Usage: newuser username password" << std::endl;
         return;
     }
+
+    // Check for invalid characters in username and password
+    char invalidChars[] = {' ', ')', '(', '\\', '/', ':', ';', '"', '\'', '<', '>', '|', '?', ','}; // List of invalid characters
+    for(char c : invalidChars){
+        if(username.find(c) != std::string::npos || password.find(c) != std::string::npos){
+            std::cout << "Username and password cannot contain spaces or the following characters: ) ( \\ / : ; \" ' < > | ? ," << std::endl;
+            return;
+        }
+    }
     if(username.length() < 3 || username.length() > 32 || password.length() < 4 || password.length() > 8){
         std::cout << "Username must be between 3 and 32 characters long, and password must be between 4 and 8 characters long." << std::endl;
         return;
