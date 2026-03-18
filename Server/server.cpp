@@ -13,7 +13,7 @@
 // Description: This is the server for a simple chat room application. It listens for incoming connections from clients and handles commands sent by the clients.
 // The server maintains a list of connected clients and their login status.
 // It processes commands such as login, newuser, send, and logout, and sends appropriate responses back to the clients.
-// It uses a ClientManager class to manage client connections and user accounts. The server runs indefinitely, accepting new messages and processing their commands.
+// It uses a ClientManager class to manage client connections and user accounts. The server runs indefinitely, accepting new client connections and messages while processing the commands.
 // Accounts are stored in a text file called "accounts.txt" and are loaded into memory when the server starts. The server also handles client disconnections gracefully.
 
 #define SERVER_PORT 15377
